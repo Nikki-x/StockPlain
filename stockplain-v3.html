@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StockPlain — Investing Without the Jargon</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --black:#0a0a0a;--white:#f5f2eb;--cream:#ede9df;--surface:#fff;
+  --green:#1a9e5f;--green-light:#e6f7ef;--green-dim:#0f7a48;
+  --red:#d94f3d;--red-light:#fdecea;
+  --amber:#e8a020;--amber-light:#fef6e4;
+  --purple:#534AB7;--purple-light:#EEEDFE;
+  --border:rgba(10,10,10,0.09);--border-md:rgba(10,10,10,0.15);
+  --shadow:0 2px 20px rgba(10,10,10,0.06);--shadow-lg:0 8px 40px rgba(10,10,10,0.1);
+}
+html{scroll-behavior:smooth}
+body{background:var(--white);color:var(--black);font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.6;min-height:100vh}
+
+/* NAV */
+nav{display:flex;align-items:center;justify-content:space-between;padding:1rem 2rem;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(245,242,235,0.92);backdrop-filter:blur(12px);z-index:200}
+.logo{font-family:'Syne',sans-serif;font-weight:800;font-size:1.2rem;letter-spacing:-0.02em}
+.logo span{color:var(--green)}
+.nav-right{display:flex;align-items:center;gap:8px}
+.nav-btn{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:500;padding:6px 12px;border:1px solid var(--border-md);border-radius:20px;background:var(--surface);cursor:pointer;transition:all .2s;color:var(--black);white-space:nowrap}
+.nav-btn:hover{border-color:var(--green);color:var(--green)}
+.watchlist-count{background:var(--green);color:#fff;font-size:10px;font-weight:700;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+
+/* MOOD BANNER */
+.mood-banner{background:var(--black);color:var(--white);padding:.6rem 2rem;font-size:12px;display:flex;align-items:center;gap:8px;min-height:36px}
+.mood-dot{width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.mood-text{opacity:.85;font-weight:300}
+.mood-label{font-weight:600;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.5;margin-right:4px}
+
+/* TABS */
+.tabs{display:flex;gap:2px;background:var(--cream);border-radius:12px;padding:3px;max-width:500px;margin:2rem auto 0}
+.tab{flex:1;padding:7px 10px;border:none;background:transparent;border-radius:9px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;color:#777;white-space:nowrap}
+.tab.active{background:var(--surface);color:var(--black);box-shadow:var(--shadow)}
+
+/* HERO */
+.hero{max-width:700px;margin:0 auto;padding:3rem 2rem 1.5rem;text-align:center}
+.hero-eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:.7rem}
+h1{font-family:'Syne',sans-serif;font-weight:800;font-size:clamp(1.9rem,5vw,2.9rem);line-height:1.1;letter-spacing:-.03em;margin-bottom:.9rem}
+h1 em{font-style:italic;font-weight:600;color:var(--green)}
+.hero-sub{font-size:.9rem;color:#666;font-weight:300;max-width:420px;margin:0 auto 1.8rem;line-height:1.7}
+
+/* SEARCH */
+.search-wrap{display:flex;gap:8px;max-width:440px;margin:0 auto}
+.search-input{flex:1;padding:12px 16px;border:1.5px solid var(--border-md);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:.9rem;background:var(--surface);color:var(--black);outline:none;transition:border-color .2s,box-shadow .2s;letter-spacing:.05em;text-transform:uppercase}
+.search-input::placeholder{text-transform:none;letter-spacing:0;color:#aaa}
+.search-input:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,158,95,0.1)}
+.search-btn{padding:12px 20px;background:var(--black);color:var(--white);border:none;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:.82rem;cursor:pointer;transition:background .2s,transform .1s;white-space:nowrap}
+.search-btn:hover{background:var(--green)}
+.search-btn:active{transform:scale(.97)}
+.search-btn:disabled{background:#ccc;cursor:not-allowed}
+.chip{font-size:11px;padding:4px 10px;border:1px solid var(--border-md);border-radius:20px;cursor:pointer;background:var(--surface);color:#666;transition:all .15s;font-weight:500}
+.chip:hover{border-color:var(--green);color:var(--green);background:var(--green-light)}
+
+/* COMPARE */
+.compare-wrap{display:flex;gap:8px;max-width:500px;margin:0 auto}
+.vs-badge{display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:.75rem;color:#bbb;padding:0 2px;flex-shrink:0}
+
+/* MAIN */
+.main{max-width:780px;margin:0 auto;padding:1.25rem 2rem 4rem}
+
+/* LOADING */
+.loading{display:none;text-align:center;padding:2.5rem 0}
+.loading.active{display:block}
+.loading-ticker{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;letter-spacing:-.02em;margin-bottom:.4rem}
+.loading-bar-wrap{width:160px;height:3px;background:var(--cream);border-radius:2px;margin:.8rem auto;overflow:hidden}
+.loading-bar{height:100%;background:var(--green);border-radius:2px;animation:load 1.8s ease-in-out infinite}
+@keyframes load{0%{width:0%;margin-left:0%}50%{width:60%;margin-left:20%}100%{width:0%;margin-left:100%}}
+.loading-msg{font-size:12px;color:#aaa;font-weight:300}
+
+/* ERROR */
+.error-box{display:none;background:var(--red-light);border:1px solid rgba(217,79,61,.2);border-radius:12px;padding:1rem;color:var(--red);font-size:.85rem;text-align:center;margin-top:1rem}
+.error-box.active{display:block}
+
+/* STOCK CARD */
+.stock-card{display:none;background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .35s ease}
+.stock-card.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.card-header{padding:1.4rem 1.6rem;border-bottom:1px solid var(--border);display:grid;grid-template-columns:1fr auto;gap:1rem;align-items:start}
+.card-ticker{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:800;letter-spacing:-.02em;line-height:1}
+.card-name{font-size:.8rem;color:#999;margin-top:3px}
+.price-val{font-family:'Syne',sans-serif;font-size:1.6rem;font-weight:700;letter-spacing:-.02em;text-align:right}
+.price-change{font-size:.8rem;font-weight:500;margin-top:2px;display:flex;align-items:center;gap:3px;justify-content:flex-end}
+.up{color:var(--green)}.down{color:var(--red)}.neutral{color:var(--amber)}
+
+/* SCORE */
+.score-section{display:flex;align-items:center;gap:1.25rem;padding:1.1rem 1.6rem;border-bottom:1px solid var(--border);background:linear-gradient(135deg,#fafafa,var(--white))}
+.score-ring-wrap{position:relative;width:76px;height:76px;flex-shrink:0}
+.score-ring-wrap svg{transform:rotate(-90deg)}
+.score-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-num{font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;line-height:1}
+.score-text{font-size:9px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#bbb;margin-top:1px}
+.score-details{flex:1}
+.score-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem;margin-bottom:.2rem}
+.score-desc{font-size:.8rem;color:#666;line-height:1.5}
+.risk-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;margin-top:5px}
+.risk-low{background:var(--green-light);color:var(--green-dim)}
+.risk-medium{background:var(--amber-light);color:#9a6800}
+.risk-high{background:var(--red-light);color:#a33}
+
+/* CHART */
+.chart-section{padding:1.1rem 1.6rem;border-bottom:1px solid var(--border)}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem}
+.section-label{font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#bbb}
+.chart-note{font-size:11px;color:#bbb}
+.chart-wrap{height:110px}
+
+/* CARD BODY */
+.card-body{padding:1.4rem 1.6rem;display:flex;flex-direction:column;gap:1.1rem}
+.section-text{font-size:.88rem;color:#333;line-height:1.75;font-weight:300}
+.things-list{display:flex;flex-direction:column;gap:7px}
+.thing-item{display:flex;gap:9px;align-items:flex-start;padding:9px 11px;background:var(--cream);border-radius:10px}
+.thing-num{font-family:'Syne',sans-serif;font-weight:800;font-size:.7rem;color:var(--green);min-width:16px;padding-top:2px}
+.thing-text{font-size:.85rem;color:#333;line-height:1.55}
+.verdict-box{background:var(--black);color:var(--white);border-radius:14px;padding:1.1rem 1.4rem}
+.verdict-box .section-label{color:rgba(255,255,255,.3)}
+.verdict-box .section-text{color:rgba(255,255,255,.82);font-size:.85rem;margin-top:.35rem}
+.add-watch-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:10px;border:1.5px dashed var(--border-md);border-radius:12px;background:transparent;font-family:'DM Sans',sans-serif;font-size:.82rem;font-weight:500;color:#999;cursor:pointer;transition:all .2s}
+.add-watch-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-light)}
+.add-watch-btn.watching{border-style:solid;border-color:var(--green);color:var(--green);background:var(--green-light)}
+
+/* CHAT */
+.chat-section{border-top:1px solid var(--border);padding:1.1rem 1.6rem}
+.chat-section .section-label{margin-bottom:.75rem}
+.chat-messages{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:.75rem}
+.chat-msg{padding:8px 12px;border-radius:10px;font-size:.82rem;line-height:1.55;max-width:90%}
+.chat-msg.user{background:var(--black);color:var(--white);align-self:flex-end;border-radius:10px 10px 2px 10px}
+.chat-msg.ai{background:var(--cream);color:var(--black);align-self:flex-start;border-radius:10px 10px 10px 2px}
+.chat-msg.typing{opacity:.5;font-style:italic}
+.chat-input-row{display:flex;gap:6px}
+.chat-input{flex:1;padding:9px 12px;border:1.5px solid var(--border-md);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.82rem;background:var(--surface);color:var(--black);outline:none;transition:border-color .2s}
+.chat-input:focus{border-color:var(--green)}
+.chat-send{padding:9px 14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:.75rem;cursor:pointer;white-space:nowrap}
+.chat-send:disabled{background:#ccc;cursor:not-allowed}
+.chat-prompts{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:.6rem}
+.chat-prompt-chip{font-size:11px;padding:4px 10px;border:1px solid var(--border-md);border-radius:20px;cursor:pointer;background:var(--surface);color:#666;transition:all .15s}
+.chat-prompt-chip:hover{border-color:var(--green);color:var(--green);background:var(--green-light)}
+
+/* COMPARE CARDS */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:1rem}
+.compare-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .35s ease}
+.compare-card-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border)}
+.compare-card-ticker{font-family:'Syne',sans-serif;font-weight:800;font-size:1.25rem;letter-spacing:-.02em}
+.compare-card-name{font-size:.72rem;color:#aaa;margin-top:2px}
+.compare-price{font-family:'Syne',sans-serif;font-weight:700;font-size:1rem;margin-top:.2rem}
+.compare-body{padding:1rem 1.2rem;display:flex;flex-direction:column;gap:.8rem}
+.compare-score-bar{height:5px;background:var(--cream);border-radius:3px;overflow:hidden;margin-top:3px}
+.compare-score-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.compare-winner{border:2px solid var(--green)!important}
+.winner-tag{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--green);margin-left:7px}
+
+/* WATCHLIST */
+.watchlist-panel{display:none;background:var(--surface);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-lg);animation:fadeUp .3s ease}
+.watchlist-panel.active{display:block}
+.watchlist-header{padding:1.1rem 1.6rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.watchlist-title{font-family:'Syne',sans-serif;font-weight:700;font-size:.95rem}
+.watchlist-empty{padding:2.5rem;text-align:center;color:#ccc;font-size:.85rem}
+.watch-item{display:flex;align-items:center;justify-content:space-between;padding:.9rem 1.6rem;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+.watch-item:hover{background:var(--cream)}
+.watch-item:last-child{border-bottom:none}
+.watch-ticker{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem}
+.watch-name{font-size:.72rem;color:#aaa}
+.watch-right{display:flex;align-items:center;gap:10px}
+.watch-score{font-size:.75rem;font-weight:600;padding:2px 9px;border-radius:20px}
+.watch-remove{font-size:16px;color:#ddd;border:none;background:none;cursor:pointer;line-height:1;transition:color .15s}
+.watch-remove:hover{color:var(--red)}
+
+/* QUIZ */
+.quiz-wrap{background:var(--surface);border:1px solid var(--border);border-radius:20px;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .35s ease}
+.quiz-header{padding:1.4rem 1.6rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.quiz-step-indicator{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#bbb}
+.quiz-progress{flex:1;height:3px;background:var(--cream);border-radius:2px;overflow:hidden}
+.quiz-progress-fill{height:100%;background:var(--green);border-radius:2px;transition:width .4s ease}
+.quiz-body{padding:1.75rem 1.6rem}
+.quiz-q{font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;margin-bottom:1.25rem;line-height:1.3}
+.quiz-options{display:flex;flex-direction:column;gap:8px}
+.quiz-option{padding:12px 16px;border:1.5px solid var(--border-md);border-radius:12px;cursor:pointer;font-size:.88rem;transition:all .18s;text-align:left;background:var(--surface);color:var(--black);font-family:'DM Sans',sans-serif}
+.quiz-option:hover{border-color:var(--green);background:var(--green-light)}
+.quiz-option.selected{border-color:var(--green);background:var(--green-light);font-weight:500}
+
+/* DNA CARD */
+.dna-card{background:var(--black);color:var(--white);border-radius:20px;overflow:hidden;box-shadow:var(--shadow-lg);animation:fadeUp .4s ease;position:relative}
+.dna-card-inner{padding:2rem}
+.dna-card-eyebrow{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.35);margin-bottom:.5rem}
+.dna-card-type{font-family:'Syne',sans-serif;font-weight:800;font-size:2rem;letter-spacing:-.03em;line-height:1.05;margin-bottom:.4rem}
+.dna-card-type span{color:var(--green)}
+.dna-card-tagline{font-size:.85rem;color:rgba(255,255,255,.55);font-weight:300;margin-bottom:1.5rem;line-height:1.55}
+.dna-traits{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1.5rem}
+.dna-trait{background:rgba(255,255,255,.06);border-radius:10px;padding:.7rem .9rem}
+.dna-trait-label{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:3px}
+.dna-trait-val{font-family:'Syne',sans-serif;font-weight:700;font-size:.9rem;color:var(--white)}
+.dna-bars{margin-bottom:1.5rem}
+.dna-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.dna-bar-label{font-size:11px;color:rgba(255,255,255,.45);width:80px;flex-shrink:0}
+.dna-bar-track{flex:1;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden}
+.dna-bar-fill{height:100%;border-radius:2px;transition:width 1s ease}
+.dna-stocks{margin-bottom:1.5rem}
+.dna-stocks-label{font-size:9px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.5rem}
+.dna-stock-pills{display:flex;flex-wrap:wrap;gap:5px}
+.dna-stock-pill{font-size:11px;font-weight:600;padding:3px 10px;background:rgba(255,255,255,.08);border-radius:20px;color:rgba(255,255,255,.7)}
+.dna-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.08);padding-top:1rem}
+.dna-footer-logo{font-family:'Syne',sans-serif;font-weight:800;font-size:.9rem}
+.dna-footer-logo span{color:var(--green)}
+.dna-footer-note{font-size:10px;color:rgba(255,255,255,.25)}
+.dna-share-btn{margin-top:1rem;width:100%;padding:12px;background:var(--green);color:#fff;border:none;border-radius:12px;font-family:'Syne',sans-serif;font-weight:700;font-size:.85rem;cursor:pointer;transition:background .2s}
+.dna-share-btn:hover{background:var(--green-dim)}
+.dna-accent{position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(26,158,95,.15),transparent 70%);pointer-events:none}
+
+@media(max-width:560px){
+  .compare-grid{grid-template-columns:1fr}
+  .card-header{grid-template-columns:1fr}
+  .price-val,.price-change{text-align:left;justify-content:flex-start}
+  nav{padding:.75rem 1rem}
+  .hero{padding:2rem 1rem 1.25rem}
+  .main{padding:1rem 1rem 4rem}
+  .dna-traits{grid-template-columns:1fr 1fr}
+  .nav-btn span:not(.watchlist-count){display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- MOOD BANNER -->
+<div class="mood-banner" id="moodBanner">
+  <div class="mood-dot" id="moodDot"></div>
+  <span class="mood-label">Market today</span>
+  <span class="mood-text" id="moodText">Loading market mood…</span>
+</div>
+
+<nav>
+  <div class="logo">Stock<span>Plain</span></div>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="switchTab('quiz')">🧬 <span>My DNA</span></button>
+    <button class="nav-btn" onclick="toggleWatchlistPanel()">★ <span>Watchlist</span> <span class="watchlist-count" id="watchCount">0</span></button>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="hero-eyebrow">No finance degree required</div>
+  <h1>Investing explained<br><em>like you're human</em></h1>
+  <p class="hero-sub">AI breakdowns, invest scores, live chat, and your personal investor DNA — all jargon-free.</p>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('single')">Explain a stock</button>
+    <button class="tab" onclick="switchTab('compare')">Compare two</button>
+    <button class="tab" onclick="switchTab('quiz')">Investor DNA</button>
+    <button class="tab" onclick="switchTab('watchlist')">Watchlist</button>
+  </div>
+</div>
+
+<!-- SINGLE TAB -->
+<div id="tab-single">
+  <div style="max-width:700px;margin:0 auto;padding:0 2rem 1rem;text-align:center">
+    <div class="search-wrap">
+      <input class="search-input" id="tickerInput" type="text" placeholder="e.g. AAPL, TSLA, NVDA" maxlength="6"/>
+      <button class="search-btn" id="searchBtn" onclick="explain()">Explain it</button>
+    </div>
+    <div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap;margin-top:.7rem">
+      <span class="chip" onclick="quickSearch('AAPL')">AAPL</span>
+      <span class="chip" onclick="quickSearch('TSLA')">TSLA</span>
+      <span class="chip" onclick="quickSearch('NVDA')">NVDA</span>
+      <span class="chip" onclick="quickSearch('AMZN')">AMZN</span>
+      <span class="chip" onclick="quickSearch('MSFT')">MSFT</span>
+      <span class="chip" onclick="quickSearch('META')">META</span>
+    </div>
+  </div>
+  <div class="main">
+    <div class="loading" id="loading">
+      <div class="loading-ticker" id="loadingTicker">—</div>
+      <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+      <div class="loading-msg" id="loadingMsg">Cutting through the jargon…</div>
+    </div>
+    <div class="error-box" id="errorBox"></div>
+    <div class="stock-card" id="stockCard">
+      <div class="card-header">
+        <div>
+          <div class="card-ticker" id="resTicker"></div>
+          <div class="card-name" id="resName"></div>
+        </div>
+        <div>
+          <div class="price-val" id="resPrice">—</div>
+          <div class="price-change" id="resChange"></div>
+        </div>
+      </div>
+      <div class="score-section">
+        <div class="score-ring-wrap">
+          <svg width="76" height="76" viewBox="0 0 76 76">
+            <circle cx="38" cy="38" r="30" fill="none" stroke="#ede9df" stroke-width="7"/>
+            <circle id="scoreArc" cx="38" cy="38" r="30" fill="none" stroke="#1a9e5f" stroke-width="7" stroke-linecap="round" stroke-dasharray="188" stroke-dashoffset="188" style="transition:stroke-dashoffset 1s ease,stroke .5s"/>
+          </svg>
+          <div class="score-label">
+            <div class="score-num" id="scoreNum">—</div>
+            <div class="score-text">Score</div>
+          </div>
+        </div>
+        <div class="score-details">
+          <div class="score-title" id="scoreTitle">Invest score</div>
+          <div class="score-desc" id="scoreDesc"></div>
+          <div id="resBadge"></div>
+        </div>
+      </div>
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="section-label">Price trend (30d simulated)</div>
+          <div class="chart-note" id="chartNote"></div>
+        </div>
+        <div class="chart-wrap"><canvas id="priceChart"></canvas></div>
+      </div>
+      <div class="card-body">
+        <div>
+          <div class="section-label">What they actually do</div>
+          <div class="section-text" id="resWhat"></div>
+        </div>
+        <div>
+          <div class="section-label">What's been happening</div>
+          <div class="section-text" id="resMovement"></div>
+        </div>
+        <div>
+          <div class="section-label">3 things to know before investing</div>
+          <div class="things-list" id="resThings"></div>
+        </div>
+        <div class="verdict-box">
+          <div class="section-label">Plain-English verdict</div>
+          <div class="section-text" id="resVerdict"></div>
+        </div>
+        <button class="add-watch-btn" id="watchBtn" onclick="toggleWatch()">★ Add to watchlist</button>
+      </div>
+      <!-- CHAT -->
+      <div class="chat-section">
+        <div class="section-label">Ask anything about this stock</div>
+        <div class="chat-prompts" id="chatPrompts"></div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chatInput" type="text" placeholder="e.g. What happens if interest rates rise?" />
+          <button class="chat-send" id="chatSend" onclick="sendChat()">Ask</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COMPARE TAB -->
+<div id="tab-compare" style="display:none">
+  <div style="max-width:700px;margin:0 auto;padding:0 2rem 1rem;text-align:center">
+    <div class="compare-wrap">
+      <input class="search-input" id="ticker1" type="text" placeholder="AAPL" maxlength="6"/>
+      <div class="vs-badge">VS</div>
+      <input class="search-input" id="ticker2" type="text" placeholder="TSLA" maxlength="6"/>
+      <button class="search-btn" onclick="compare()">Compare</button>
+    </div>
+  </div>
+  <div class="main">
+    <div class="loading" id="compareLoading" style="display:none">
+      <div class="loading-ticker">Comparing…</div>
+      <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+      <div class="loading-msg">Asking AI to settle the debate…</div>
+    </div>
+    <div class="error-box" id="compareError"></div>
+    <div class="compare-grid" id="compareGrid" style="display:none"></div>
+    <div id="compareVerdict" style="display:none;margin-top:1rem"></div>
+  </div>
+</div>
+
+<!-- QUIZ TAB -->
+<div id="tab-quiz" style="display:none">
+  <div class="main">
+    <div class="quiz-wrap" id="quizWrap">
+      <div class="quiz-header">
+        <div class="quiz-step-indicator" id="quizStepLabel">Question 1 of 5</div>
+        <div class="quiz-progress"><div class="quiz-progress-fill" id="quizFill" style="width:20%"></div></div>
+      </div>
+      <div class="quiz-body">
+        <div class="quiz-q" id="quizQ"></div>
+        <div class="quiz-options" id="quizOptions"></div>
+      </div>
+    </div>
+    <div id="dnaResult" style="display:none"></div>
+  </div>
+</div>
+
+<!-- WATCHLIST TAB -->
+<div id="tab-watchlist" style="display:none">
+  <div class="main">
+    <div class="watchlist-panel active">
+      <div class="watchlist-header">
+        <div class="watchlist-title">My Watchlist</div>
+        <div style="font-size:12px;color:#bbb" id="watchlistMeta"></div>
+      </div>
+      <div id="watchlistBody"></div>
+    </div>
+  </div>
+</div>
+
+<footer style="text-align:center;padding:1.5rem;font-size:11px;color:#ccc;border-top:1px solid var(--border)">
+  Built with the <strong style="color:#999">Claude API</strong> · For educational purposes only · Not financial advice
+</footer>
+
+<script>
+const API_KEY = 'YOUR_KEY_HERE';
+const MODEL = 'claude-opus-4-5';
+
+let currentData = null;
+let chartInst = null;
+let chatHistory = [];
+let watchlist = JSON.parse(localStorage.getItem('sp_watchlist3') || '[]');
+let investorProfile = JSON.parse(localStorage.getItem('sp_profile') || 'null');
+let quizStep = 0;
+let quizAnswers = [];
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(t) {
+  ['single','compare','quiz','watchlist'].forEach(n => {
+    document.getElementById('tab-'+n).style.display = n===t?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach((el,i) => {
+    el.classList.toggle('active', ['single','compare','quiz','watchlist'][i]===t);
+  });
+  if(t==='watchlist') renderWatchlist();
+  if(t==='quiz') initQuiz();
+}
+function toggleWatchlistPanel(){ switchTab('watchlist'); }
+
+// ── API ───────────────────────────────────────────────────────────────────────
+async function callClaude(prompt, sysPrompt) {
+  const msgs = sysPrompt
+    ? [{ role:'user', content: sysPrompt + '\n\n' + prompt }]
+    : [{ role:'user', content: prompt }];
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'x-api-key': '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',
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body: JSON.stringify({ model: MODEL, max_tokens:1000, messages: msgs })
+  });
+  const data = await res.json();
+  return data.content?.find(b=>b.type==='text')?.text || '';
+}
+
+async function callClaudeJSON(prompt) {
+  const txt = await callClaude(prompt);
+  return JSON.parse(txt.replace(/```json|```/g,'').trim());
+}
+
+// ── MARKET MOOD ───────────────────────────────────────────────────────────────
+async function loadMood() {
+  try {
+    const txt = await callClaude(`Give a single plain-English sentence (max 12 words) describing how stock markets are generally feeling right now. Be specific about a current theme (e.g. AI hype, rate fears, earnings season). No jargon. Just the sentence, nothing else.`);
+    document.getElementById('moodText').textContent = txt.trim().replace(/^"|"$/g,'');
+    document.getElementById('moodDot').style.background = '#1a9e5f';
+  } catch(e) {
+    document.getElementById('moodText').textContent = 'Markets are open and moving — search a stock to get started.';
+  }
+}
+
+// ── EXPLAIN ───────────────────────────────────────────────────────────────────
+function quickSearch(t){ document.getElementById('tickerInput').value=t; explain(); }
+
+async function explain() {
+  const ticker = document.getElementById('tickerInput').value.trim().toUpperCase();
+  if(!ticker) return;
+  setLoading(true, ticker);
+  chatHistory = [];
+  document.getElementById('chatMessages').innerHTML = '';
+
+  const prompt = `You are StockPlain. Analyze: ${ticker}
+Respond ONLY with raw JSON:
+{
+  "ticker":"${ticker}",
+  "companyName":"Full name",
+  "currentPrice":"e.g. $182.50",
+  "priceChange":"+1.2% today",
+  "priceDirection":"up/down/neutral",
+  "what":"2-3 sentence plain English — real products, for a 16-year-old",
+  "movement":"2-3 sentences on recent performance in plain English",
+  "things":["thing 1","thing 2","thing 3"],
+  "verdict":"2-3 sentence honest plain-English take",
+  "risk":"low/medium/high",
+  "riskReason":"One short sentence",
+  "investScore":72,
+  "investScoreLabel":"Solid pick",
+  "investScoreReason":"One sentence why",
+  "trend":"up/down/sideways",
+  "trendNote":"e.g. Up ~18% over last 6 months",
+  "chatPrompts":["What happens if inflation rises?","Is this good for beginners?","Who are their main competitors?"]
+}
+If ticker unknown: {"error":"message"}`;
+
+  try {
+    const d = await callClaudeJSON(prompt);
+    setLoading(false);
+    if(d.error){ showError(d.error); return; }
+    currentData = d;
+    renderCard(d);
+  } catch(e) {
+    setLoading(false);
+    showError('Something went wrong. Check your API key and try again.');
+  }
+}
+
+function renderCard(d) {
+  document.getElementById('resTicker').textContent = d.ticker;
+  document.getElementById('resName').textContent = d.companyName;
+  document.getElementById('resWhat').textContent = d.what;
+  document.getElementById('resMovement').textContent = d.movement;
+  document.getElementById('resVerdict').textContent = d.verdict;
+  document.getElementById('resPrice').textContent = d.currentPrice||'—';
+  const dir = d.priceDirection||'neutral';
+  document.getElementById('resChange').innerHTML = `<span class="${dir}">${dir==='up'?'▲':dir==='down'?'▼':'●'} ${d.priceChange||''}</span>`;
+
+  const score = Math.min(100,Math.max(0,d.investScore||50));
+  const circ = 2*Math.PI*30;
+  const offset = circ-(score/100)*circ;
+  const arc = document.getElementById('scoreArc');
+  arc.style.strokeDashoffset = offset;
+  const sColor = score>=70?'#1a9e5f':score>=45?'#e8a020':'#d94f3d';
+  arc.style.stroke = sColor;
+  document.getElementById('scoreNum').textContent = score;
+  document.getElementById('scoreNum').style.color = sColor;
+  document.getElementById('scoreTitle').textContent = d.investScoreLabel||'Invest score';
+  document.getElementById('scoreDesc').textContent = d.investScoreReason||'';
+
+  const rClass={low:'risk-low',medium:'risk-medium',high:'risk-high'}[d.risk]||'risk-medium';
+  const rIcon={low:'●',medium:'◆',high:'▲'}[d.risk]||'◆';
+  document.getElementById('resBadge').innerHTML = `<span class="risk-badge ${rClass}">${rIcon} ${d.risk} risk — ${d.riskReason}</span>`;
+
+  document.getElementById('resThings').innerHTML=(d.things||[]).map((t,i)=>
+    `<div class="thing-item"><span class="thing-num">0${i+1}</span><span class="thing-text">${t}</span></div>`
+  ).join('');
+
+  document.getElementById('chartNote').textContent = d.trendNote||'';
+  drawChart(d.trend||'sideways');
+
+  // Chat prompts
+  document.getElementById('chatPrompts').innerHTML=(d.chatPrompts||[]).map(p=>
+    `<span class="chat-prompt-chip" onclick="useChatPrompt('${p.replace(/'/g,"\\'")}')"> ${p}</span>`
+  ).join('');
+
+  updateWatchBtn(d.ticker);
+  document.getElementById('stockCard').classList.add('active');
+  document.getElementById('stockCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+// ── CHART ─────────────────────────────────────────────────────────────────────
+function drawChart(trend) {
+  if(chartInst){ chartInst.destroy(); chartInst=null; }
+  let base=100, labels=[], data=[];
+  for(let i=0;i<30;i++){
+    labels.push('');
+    const noise=(Math.random()-.48)*3;
+    const drift=trend==='up'?.4:trend==='down'?-.4:.05;
+    base+=drift+noise;
+    data.push(parseFloat(base.toFixed(2)));
+  }
+  const color=trend==='up'?'#1a9e5f':trend==='down'?'#d94f3d':'#e8a020';
+  const ctx=document.getElementById('priceChart').getContext('2d');
+  const grad=ctx.createLinearGradient(0,0,0,110);
+  grad.addColorStop(0,color+'22'); grad.addColorStop(1,color+'00');
+  chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:[{data,borderColor:color,backgroundColor:grad,borderWidth:2,pointRadius:0,fill:true,tension:.4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},scales:{x:{display:false},y:{display:false}},animation:{duration:800}}});
+}
+
+// ── CHAT ──────────────────────────────────────────────────────────────────────
+function useChatPrompt(p){ document.getElementById('chatInput').value=p; sendChat(); }
+
+async function sendChat() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if(!msg || !currentData) return;
+  input.value='';
+
+  addChatMsg(msg,'user');
+  const typing = addChatMsg('Thinking…','ai typing');
+  document.getElementById('chatSend').disabled=true;
+
+  chatHistory.push({role:'user',content:msg});
+
+  const context = `You are StockPlain, a friendly AI that explains investing to beginners. The user is asking about ${currentData.ticker} (${currentData.companyName}). Keep answers to 2-3 sentences max. Plain English only — no jargon. If you must use a finance term, explain it immediately.`;
+  const fullPrompt = context + '\n\nConversation so far:\n' + chatHistory.map(m=>`${m.role}: ${m.content}`).join('\n') + '\n\nRespond to the latest user message:';
+
+  try {
+    const reply = await callClaude(fullPrompt);
+    typing.remove();
+    const aiMsg = addChatMsg(reply,'ai');
+    chatHistory.push({role:'assistant',content:reply});
+    aiMsg.scrollIntoView({behavior:'smooth',block:'nearest'});
+  } catch(e) {
+    typing.remove();
+    addChatMsg('Something went wrong. Try again.','ai');
+  }
+  document.getElementById('chatSend').disabled=false;
+}
+
+function addChatMsg(text, cls) {
+  const wrap = document.getElementById('chatMessages');
+  const el = document.createElement('div');
+  el.className='chat-msg '+cls;
+  el.textContent=text;
+  wrap.appendChild(el);
+  return el;
+}
+
+// ── COMPARE ───────────────────────────────────────────────────────────────────
+async function compare() {
+  const t1=document.getElementById('ticker1').value.trim().toUpperCase();
+  const t2=document.getElementById('ticker2').value.trim().toUpperCase();
+  if(!t1||!t2) return;
+  document.getElementById('compareLoading').style.display='block';
+  document.getElementById('compareGrid').style.display='none';
+  document.getElementById('compareVerdict').style.display='none';
+  document.getElementById('compareError').classList.remove('active');
+
+  const prompt=`Compare ${t1} vs ${t2} for a beginner investor. Respond ONLY with raw JSON:
+{"stocks":[{"ticker":"${t1}","companyName":"name","currentPrice":"$xxx","priceChange":"+x%","priceDirection":"up/down/neutral","investScore":72,"investScoreLabel":"label","risk":"low/medium/high","summary":"2 sentence summary","pros":["pro1","pro2"],"cons":["con1","con2"]},{"ticker":"${t2}","companyName":"name","currentPrice":"$xxx","priceChange":"+x%","priceDirection":"up/down/neutral","investScore":65,"investScoreLabel":"label","risk":"low/medium/high","summary":"2 sentence summary","pros":["pro1","pro2"],"cons":["con1","con2"]}],"winner":"ticker","winnerReason":"2 sentence plain English verdict"}`;
+
+  try {
+    const d = await callClaudeJSON(prompt);
+    document.getElementById('compareLoading').style.display='none';
+    if(!d.stocks){ document.getElementById('compareError').textContent='Could not compare.'; document.getElementById('compareError').classList.add('active'); return; }
+    renderCompare(d);
+  } catch(e) {
+    document.getElementById('compareLoading').style.display='none';
+    document.getElementById('compareError').textContent='Something went wrong.';
+    document.getElementById('compareError').classList.add('active');
+  }
+}
+
+function renderCompare(d) {
+  const grid=document.getElementById('compareGrid');
+  grid.innerHTML=''; grid.style.display='grid';
+  d.stocks.forEach(s=>{
+    const isWinner=s.ticker===d.winner;
+    const score=Math.min(100,Math.max(0,s.investScore||50));
+    const sColor=score>=70?'var(--green)':score>=45?'var(--amber)':'var(--red)';
+    const sBg=score>=70?'var(--green-light)':score>=45?'var(--amber-light)':'var(--red-light)';
+    const dir=s.priceDirection||'neutral';
+    const rClass={low:'risk-low',medium:'risk-medium',high:'risk-high'}[s.risk]||'risk-medium';
+    grid.innerHTML+=`<div class="compare-card ${isWinner?'compare-winner':''}">
+      <div class="compare-card-header">
+        <div style="display:flex;align-items:center"><div class="compare-card-ticker">${s.ticker}</div>${isWinner?'<span class="winner-tag">★ Better pick</span>':''}</div>
+        <div class="compare-card-name">${s.companyName}</div>
+        <div class="compare-price" style="color:${dir==='up'?'var(--green)':dir==='down'?'var(--red)':'var(--amber)'}">${s.currentPrice} <span style="font-size:.72rem;font-weight:400">${s.priceChange}</span></div>
+      </div>
+      <div class="compare-body">
+        <div><div class="section-label">Invest score</div>
+          <div style="display:flex;align-items:center;gap:8px;margin-top:3px"><span style="font-family:'Syne',sans-serif;font-weight:800;font-size:1rem;color:${sColor}">${score}</span><span style="font-size:.72rem;color:#999">${s.investScoreLabel||''}</span></div>
+          <div class="compare-score-bar"><div class="compare-score-fill" style="width:${score}%;background:${sColor}"></div></div>
+        </div>
+        <div><div class="section-label">Summary</div><div style="font-size:.8rem;color:#444;line-height:1.5;margin-top:3px">${s.summary}</div></div>
+        <div><div class="section-label">Pros</div>${(s.pros||[]).map(p=>`<div style="font-size:.78rem;color:var(--green-dim);margin-top:2px">✓ ${p}</div>`).join('')}</div>
+        <div><div class="section-label">Cons</div>${(s.cons||[]).map(c=>`<div style="font-size:.78rem;color:var(--red);margin-top:2px">✗ ${c}</div>`).join('')}</div>
+        <span class="risk-badge ${rClass}" style="align-self:flex-start">${s.risk} risk</span>
+      </div></div>`;
+  });
+  const vd=document.getElementById('compareVerdict');
+  vd.style.display='block';
+  vd.innerHTML=`<div class="verdict-box"><div class="section-label">The verdict</div><div class="section-text">${d.winnerReason}</div></div>`;
+}
+
+// ── QUIZ ──────────────────────────────────────────────────────────────────────
+const QUIZ = [
+  { q:"You have $1,000 to invest. What feels right?", opts:[
+    {t:"Put it all in one exciting company I believe in",v:"aggressive"},
+    {t:"Split it across a few different companies",v:"balanced"},
+    {t:"Put it in a safe index fund and forget about it",v:"conservative"},
+    {t:"I'm honestly too scared to invest right now",v:"cautious"}
+  ]},
+  { q:"How would you feel if your investment dropped 20% in a month?", opts:[
+    {t:"I'd buy more — this is my chance",v:"aggressive"},
+    {t:"Nervous, but I'd hold and wait it out",v:"balanced"},
+    {t:"I'd lose sleep over it",v:"conservative"},
+    {t:"I'd sell immediately to stop the bleeding",v:"cautious"}
+  ]},
+  { q:"When do you think you'd want to use this money?", opts:[
+    {t:"10+ years from now — long-term wealth",v:"aggressive"},
+    {t:"5-10 years — medium term goals",v:"balanced"},
+    {t:"2-5 years — something specific in mind",v:"conservative"},
+    {t:"Within 2 years — I might need it soon",v:"cautious"}
+  ]},
+  { q:"How much time do you want to spend tracking your investments?", opts:[
+    {t:"Every day — I love following markets",v:"aggressive"},
+    {t:"Once a week or so",v:"balanced"},
+    {t:"Once a month is enough for me",v:"conservative"},
+    {t:"I'd rather set it and forget it completely",v:"cautious"}
+  ]},
+  { q:"Which of these excites you most?", opts:[
+    {t:"High-growth tech stocks — big risk, big reward",v:"aggressive"},
+    {t:"A mix of growth stocks and stable companies",v:"balanced"},
+    {t:"Dividend stocks that pay me regularly",v:"conservative"},
+    {t:"Index funds that just track the whole market",v:"cautious"}
+  ]}
+];
+
+function initQuiz() {
+  quizStep=0; quizAnswers=[];
+  if(investorProfile && document.getElementById('dnaResult').innerHTML) {
+    document.getElementById('quizWrap').style.display='none';
+    document.getElementById('dnaResult').style.display='block';
+    return;
+  }
+  document.getElementById('quizWrap').style.display='block';
+  document.getElementById('dnaResult').style.display='none';
+  renderQuizStep();
+}
+
+function renderQuizStep() {
+  const q=QUIZ[quizStep];
+  document.getElementById('quizStepLabel').textContent=`Question ${quizStep+1} of ${QUIZ.length}`;
+  document.getElementById('quizFill').style.width=`${((quizStep+1)/QUIZ.length)*100}%`;
+  document.getElementById('quizQ').textContent=q.q;
+  document.getElementById('quizOptions').innerHTML=q.opts.map((o,i)=>
+    `<button class="quiz-option" onclick="selectQuiz(${i})">${o.t}</button>`
+  ).join('');
+}
+
+function selectQuiz(i) {
+  quizAnswers.push(QUIZ[quizStep].opts[i].v);
+  quizStep++;
+  if(quizStep<QUIZ.length){ renderQuizStep(); }
+  else { generateDNA(); }
+}
+
+async function generateDNA() {
+  document.getElementById('quizWrap').innerHTML=`<div style="padding:2.5rem;text-align:center">
+    <div class="loading-ticker">Analysing…</div>
+    <div class="loading-bar-wrap"><div class="loading-bar"></div></div>
+    <div class="loading-msg">Building your investor DNA…</div>
+  </div>`;
+
+  const counts={aggressive:0,balanced:0,conservative:0,cautious:0};
+  quizAnswers.forEach(a=>counts[a]++);
+  const dominant=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0][0];
+
+  const prompt=`Based on this investor quiz result, generate an investor profile. Dominant type: ${dominant}. Answer counts: ${JSON.stringify(counts)}.
+Respond ONLY with raw JSON:
+{
+  "type":"2-3 word investor type name (e.g. 'The Steady Builder', 'The Bold Adventurer', 'The Cautious Planner', 'The Balanced Strategist')",
+  "tagline":"One punchy sentence that captures this investor's philosophy",
+  "riskScore":${dominant==='aggressive'?80:dominant==='balanced'?55:dominant==='conservative'?35:20},
+  "growthFocus":${dominant==='aggressive'?85:dominant==='balanced'?60:dominant==='conservative'?40:25},
+  "patience":${dominant==='cautious'?85:dominant==='conservative'?75:dominant==='balanced'?60:40},
+  "diversification":${dominant==='cautious'?90:dominant==='conservative'?80:dominant==='balanced'?65:45},
+  "superpower":"One sentence on what this investor type is naturally good at",
+  "watchOut":"One sentence on what this investor type needs to be careful about",
+  "bestStocks":["TICKER1","TICKER2","TICKER3"],
+  "avoidStocks":["TICKER4","TICKER5"],
+  "linkedinCaption":"A 3-sentence LinkedIn caption the user can post with their DNA card screenshot. Should be personal, insightful, and end with a question to drive engagement. Use line breaks."
+}`;
+
+  try {
+    const d = await callClaudeJSON(prompt);
+    investorProfile = d;
+    localStorage.setItem('sp_profile', JSON.stringify(d));
+    renderDNA(d);
+  } catch(e) {
+    document.getElementById('quizWrap').innerHTML='<div style="padding:2rem;text-align:center;color:var(--red)">Something went wrong. Please try again.</div>';
+  }
+}
+
+function renderDNA(d) {
+  document.getElementById('quizWrap').style.display='none';
+  const res=document.getElementById('dnaResult');
+  res.style.display='block';
+
+  const typeWords=d.type.split(' ');
+  const lastWord=typeWords.pop();
+  const firstWords=typeWords.join(' ');
+
+  res.innerHTML=`
+  <div class="dna-card" id="dnaCardEl">
+    <div class="dna-accent"></div>
+    <div class="dna-card-inner">
+      <div class="dna-card-eyebrow">My Investor DNA · StockPlain</div>
+      <div class="dna-card-type">${firstWords} <span>${lastWord}</span></div>
+      <div class="dna-card-tagline">${d.tagline}</div>
+      <div class="dna-traits">
+        <div class="dna-trait"><div class="dna-trait-label">Risk appetite</div><div class="dna-trait-val">${d.riskScore>=70?'High':d.riskScore>=40?'Medium':'Low'}</div></div>
+        <div class="dna-trait"><div class="dna-trait-label">Growth focus</div><div class="dna-trait-val">${d.growthFocus>=70?'Aggressive':d.growthFocus>=40?'Moderate':'Conservative'}</div></div>
+        <div class="dna-trait"><div class="dna-trait-label">Patience level</div><div class="dna-trait-val">${d.patience>=70?'Long-term':d.patience>=40?'Medium':'Short-term'}</div></div>
+        <div class="dna-trait"><div class="dna-trait-label">Diversification</div><div class="dna-trait-val">${d.diversification>=70?'Wide spread':d.diversification>=40?'Balanced':'Concentrated'}</div></div>
+      </div>
+      <div class="dna-bars">
+        <div class="dna-bar-row"><div class="dna-bar-label">Risk</div><div class="dna-bar-track"><div class="dna-bar-fill" style="width:${d.riskScore}%;background:#1a9e5f"></div></div></div>
+        <div class="dna-bar-row"><div class="dna-bar-label">Growth focus</div><div class="dna-bar-track"><div class="dna-bar-fill" style="width:${d.growthFocus}%;background:#534AB7"></div></div></div>
+        <div class="dna-bar-row"><div class="dna-bar-label">Patience</div><div class="dna-bar-track"><div class="dna-bar-fill" style="width:${d.patience}%;background:#e8a020"></div></div></div>
+      </div>
+      <div class="dna-stocks">
+        <div class="dna-stocks-label">Stocks that fit your style</div>
+        <div class="dna-stock-pills">${(d.bestStocks||[]).map(s=>`<span class="dna-stock-pill">${s}</span>`).join('')}</div>
+      </div>
+      <div style="margin-bottom:1.25rem">
+        <div style="font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.35rem">Your superpower</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.65);line-height:1.5">${d.superpower}</div>
+      </div>
+      <div style="margin-bottom:1.5rem">
+        <div style="font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.3);margin-bottom:.35rem">Watch out for</div>
+        <div style="font-size:.82rem;color:rgba(255,255,255,.65);line-height:1.5">${d.watchOut}</div>
+      </div>
+      <div class="dna-footer">
+        <div class="dna-footer-logo">Stock<span>Plain</span></div>
+        <div class="dna-footer-note">Not financial advice · stockplain.app</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.25rem 1.5rem;margin-top:14px;box-shadow:var(--shadow)">
+    <div class="section-label" style="margin-bottom:.6rem">Your LinkedIn caption ✦ Copy & post with a screenshot</div>
+    <div id="linkedinCaption" style="font-size:.85rem;color:#444;line-height:1.7;white-space:pre-line">${d.linkedinCaption}</div>
+    <div style="display:flex;gap:8px;margin-top:.9rem;flex-wrap:wrap">
+      <button onclick="copyCaption()" style="padding:8px 16px;background:var(--black);color:var(--white);border:none;border-radius:10px;font-family:'Syne',sans-serif;font-weight:700;font-size:.78rem;cursor:pointer">Copy caption</button>
+      <button onclick="retakeQuiz()" style="padding:8px 16px;background:transparent;color:#666;border:1px solid var(--border-md);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:.78rem;cursor:pointer">Retake quiz</button>
+    </div>
+  </div>`;
+
+  res.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function copyCaption() {
+  const txt = document.getElementById('linkedinCaption').textContent;
+  navigator.clipboard.writeText(txt).then(()=>{
+    const btn = event.target;
+    btn.textContent='Copied!'; btn.style.background='var(--green)';
+    setTimeout(()=>{ btn.textContent='Copy caption'; btn.style.background='var(--black)'; },2000);
+  });
+}
+
+function retakeQuiz() {
+  investorProfile=null; localStorage.removeItem('sp_profile');
+  quizStep=0; quizAnswers=[];
+  document.getElementById('dnaResult').style.display='none';
+  document.getElementById('quizWrap').style.display='block';
+  document.getElementById('quizWrap').innerHTML=`<div class="quiz-header"><div class="quiz-step-indicator" id="quizStepLabel"></div><div class="quiz-progress"><div class="quiz-progress-fill" id="quizFill" style="width:20%"></div></div></div><div class="quiz-body"><div class="quiz-q" id="quizQ"></div><div class="quiz-options" id="quizOptions"></div></div>`;
+  renderQuizStep();
+}
+
+// ── WATCHLIST ─────────────────────────────────────────────────────────────────
+function toggleWatch() {
+  if(!currentData) return;
+  const t=currentData.ticker;
+  const idx=watchlist.findIndex(w=>w.ticker===t);
+  if(idx>-1) watchlist.splice(idx,1);
+  else watchlist.push({ticker:t,name:currentData.companyName,score:currentData.investScore,label:currentData.investScoreLabel,risk:currentData.risk});
+  saveWatchlist(); updateWatchBtn(t);
+}
+function updateWatchBtn(ticker) {
+  const btn=document.getElementById('watchBtn');
+  const inList=watchlist.some(w=>w.ticker===ticker);
+  btn.textContent=inList?'★ In your watchlist':'★ Add to watchlist';
+  btn.classList.toggle('watching',inList);
+}
+function saveWatchlist() {
+  localStorage.setItem('sp_watchlist3',JSON.stringify(watchlist));
+  document.getElementById('watchCount').textContent=watchlist.length;
+}
+function renderWatchlist() {
+  const body=document.getElementById('watchlistBody');
+  document.getElementById('watchlistMeta').textContent=`${watchlist.length} stock${watchlist.length!==1?'s':''}`;
+  if(!watchlist.length){ body.innerHTML='<div class="watchlist-empty">No stocks saved yet.<br>Search a stock and hit "Add to watchlist".</div>'; return; }
+  body.innerHTML=watchlist.map(w=>{
+    const score=w.score||50;
+    const sColor=score>=70?'var(--green)':score>=45?'var(--amber)':'var(--red)';
+    const sBg=score>=70?'var(--green-light)':score>=45?'var(--amber-light)':'var(--red-light)';
+    return `<div class="watch-item" onclick="loadFromWatch('${w.ticker}')">
+      <div><div class="watch-ticker">${w.ticker}</div><div class="watch-name">${w.name||''}</div></div>
+      <div class="watch-right">
+        <span class="watch-score" style="color:${sColor};background:${sBg}">${score} · ${w.label||w.risk||''}</span>
+        <button class="watch-remove" onclick="removeWatch(event,'${w.ticker}')">×</button>
+      </div></div>`;
+  }).join('');
+}
+function removeWatch(e,ticker){ e.stopPropagation(); watchlist=watchlist.filter(w=>w.ticker!==ticker); saveWatchlist(); renderWatchlist(); }
+function loadFromWatch(ticker){ switchTab('single'); document.getElementById('tickerInput').value=ticker; explain(); }
+
+// ── LOADING/ERROR ─────────────────────────────────────────────────────────────
+function setLoading(on,ticker) {
+  document.getElementById('loading').classList.toggle('active',on);
+  document.getElementById('loadingTicker').textContent=ticker||'—';
+  if(on){ document.getElementById('stockCard').classList.remove('active'); document.getElementById('errorBox').classList.remove('active'); }
+  document.getElementById('searchBtn').disabled=on;
+}
+function showError(msg){ const b=document.getElementById('errorBox'); b.textContent=msg; b.classList.add('active'); }
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.getElementById('tickerInput').addEventListener('keydown',e=>{ if(e.key==='Enter') explain(); });
+document.getElementById('ticker1').addEventListener('keydown',e=>{ if(e.key==='Enter') compare(); });
+document.getElementById('ticker2').addEventListener('keydown',e=>{ if(e.key==='Enter') compare(); });
+document.getElementById('chatInput').addEventListener('keydown',e=>{ if(e.key==='Enter') sendChat(); });
+document.getElementById('watchCount').textContent=watchlist.length;
+loadMood();
+</script>
+</body>
+</html>
